@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { MdDownloadForOffline } from "react-icons/md";
 import { Link, useParams } from "react-router-dom";
 import { v4 as uuidv4 } from "uuid";
@@ -9,11 +9,34 @@ import { pinDetailMorePinQuery, pinDetailQuery } from "../utils/data";
 import Spinner from "./Spinner";
 
 const PinDetail = ({ user }) => {
+  const { pinId } = useParams();
   const [pins, setPins] = useState();
   const [pinDetail, setPinDetail] = useState();
   const [comment, setComment] = useState("");
   const [addingComment, setAddingComment] = useState(false);
-  const { pinId } = useParams();
+
+  console.log(pins);
+
+  const fetchPinDetails = () => {
+    const query = pinDetailQuery(pinId);
+
+    if (query) {
+      client.fetch(query).then((data) => {
+        setPinDetail(data[0]);
+        console.log(data);
+        if (data[0]) {
+          const query1 = pinDetailMorePinQuery(data[0]);
+          client.fetch(query1).then((res) => {
+            setPins(res);
+          });
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchPinDetails();
+  }, [pinId]);
 
   const addComment = () => {
     if (comment) {
@@ -34,32 +57,12 @@ const PinDetail = ({ user }) => {
         ])
         .commit()
         .then(() => {
-          fetchPinDetail();
+          fetchPinDetails();
           setComment("");
           setAddingComment(false);
         });
     }
   };
-
-  const fetchPinDetail = () => {
-    const query = pinDetailQuery(pinId);
-
-    if (query) {
-      client.fetch(query).then((data) => {
-        setPinDetail(data[0]);
-
-        if (data[0]) {
-          query = pinDetailMorePinQuery(data[0]);
-
-          client.fetch(query).then((res) => setPins(res));
-        }
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchPinDetail();
-  }, [pinId]);
 
   if (!pinDetail) {
     return <Spinner message="Loading image..." />;
@@ -91,8 +94,13 @@ const PinDetail = ({ user }) => {
                 <MdDownloadForOffline />
               </a>
             </div>
-            <a href={pinDetail.destination} target="_blank" rel="noreferrer">
-              {pinDetail.destination}
+            <a
+              href={pinDetail.destination}
+              target="_blank"
+              rel="noreferrer"
+              className="font-sans"
+            >
+              {pinDetail.destination?.slice(8, 20)}
             </a>
           </div>
           <div>
